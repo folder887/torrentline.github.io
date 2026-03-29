@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="TorrentLine — download torrents directly in your browser. No installs, no backend.">
+  <title>TorrentLine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="header-inner">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+          <path d="M14 2C7.373 2 2 7.373 2 14s5.373 12 12 12 12-5.373 12-12S20.627 2 14 2z" fill="var(--accent)" opacity="0.15"/>
+          <path d="M14 7v8M14 15l-4-4M14 15l4-4" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 21h12" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="logo-text">Torrent<span class="logo-accent">Line</span></span>
+      </div>
+      <div id="client-stats" class="client-stats hidden">
+        <span class="stat-item">
+          <span class="stat-arrow down">&#8595;</span>
+          <span id="global-dl" class="mono">0 B/s</span>
+        </span>
+        <span class="stat-sep">·</span>
+        <span class="stat-item">
+          <span class="stat-arrow up">&#8593;</span>
+          <span id="global-ul" class="mono">0 B/s</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <div id="compat-warning" class="compat-warning hidden" role="alert"></div>
+
+    <!-- ── ADD TORRENT SECTION ── -->
+    <section id="add-section" aria-label="Add torrent">
+      <div
+        id="drop-zone"
+        role="button"
+        tabindex="0"
+        aria-label="Drop .torrent file here or click to browse"
+      >
+        <div class="drop-icon">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <rect x="4" y="4" width="32" height="32" rx="8" stroke="var(--border)" stroke-width="2"/>
+            <path d="M20 12v12M20 24l-5-5M20 24l5-5" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 31h16" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <p class="drop-label">Drop <code>.torrent</code> file here</p>
+        <p class="drop-sub">or <span class="link">browse files</span></p>
+        <input type="file" id="file-input" accept=".torrent" hidden aria-hidden="true">
+      </div>
+
+      <div class="add-divider" aria-hidden="true"><span>or</span></div>
+
+      <div id="magnet-zone">
+        <label for="magnet-input" class="magnet-label">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M8 2v5M8 2C5.239 2 3 4.239 3 7v2a5 5 0 0010 0V7c0-2.761-2.239-5-5-5z" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M5 13l-1.5 1.5M11 13l1.5 1.5" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Magnet Link
+        </label>
+        <div class="input-row">
+          <input
+            type="text"
+            id="magnet-input"
+            placeholder="magnet:?xt=urn:btih:…"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <button id="magnet-btn" type="button" class="btn-primary">Add</button>
+        </div>
+        <p id="magnet-error" class="field-error hidden" role="alert"></p>
+      </div>
+    </section>
+
+    <!-- ── TORRENT LIST ── -->
+    <section id="torrent-section" aria-label="Active torrents">
+      <div id="empty-state">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <circle cx="32" cy="32" r="28" stroke="var(--border)" stroke-width="2"/>
+          <path d="M32 20v16M32 36l-6-6M32 36l6-6" stroke="var(--border)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M22 46h20" stroke="var(--border)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p class="empty-title">No active torrents</p>
+        <p class="empty-sub">Add a .torrent file or magnet link to get started</p>
+      </div>
+      <ul id="torrent-list" role="list"></ul>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span>Powered by <a href="https://webtorrent.io" target="_blank" rel="noopener">WebTorrent</a></span>
+      <span class="footer-note">Downloads happen in-browser · no data is sent to any server</span>
+    </div>
+  </footer>
+
+  <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- Templates -->
+  <template id="torrent-card-tpl">
+    <li class="torrent-card">
+      <div class="card-header">
+        <div class="torrent-meta">
+          <span class="torrent-name">Loading metadata…</span>
+          <span class="torrent-size text-muted mono"></span>
+        </div>
+        <div class="card-actions">
+          <span class="status-badge">connecting</span>
+          <button class="btn-icon btn-remove" title="Remove torrent" aria-label="Remove torrent">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-fill"></div>
+        <span class="progress-pct">0%</span>
+      </div>
+
+      <div class="torrent-stats">
+        <span class="stat-item">
+          <span class="stat-arrow down">&#8595;</span>
+          <span class="dl-speed mono">0 B/s</span>
+        </span>
+        <span class="stat-item">
+          <span class="stat-arrow up">&#8593;</span>
+          <span class="ul-speed mono">0 B/s</span>
+        </span>
+        <span class="stat-item">
+          <span class="peers-icon" aria-label="peers">&#128101;</span>
+          <span class="peers mono">0</span>
+        </span>
+        <span class="stat-item eta-item">
+          <span class="eta-val text-muted">–</span>
+        </span>
+      </div>
+
+      <details class="file-list-wrap">
+        <summary>
+          Files
+          <span class="file-count badge">0</span>
+        </summary>
+        <ul class="file-list" role="list"></ul>
+      </details>
+    </li>
+  </template>
+
+  <template id="file-row-tpl">
+    <li class="file-row">
+      <span class="file-icon" aria-hidden="true"></span>
+      <span class="file-name"></span>
+      <span class="file-size mono text-muted"></span>
+      <button class="btn-download" type="button">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+          <path d="M6.5 1v8M6.5 9l-3-3M6.5 9l3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M1 11h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        Download
+      </button>
+    </li>
+  </template>
+
+  <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
