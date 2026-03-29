@@ -3,33 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="TorrentLine — download torrents directly in your browser. No installs, no backend.">
+  <meta name="description" content="TorrentLine — download torrents directly in your browser. Search games, software, movies. No installs required.">
   <title>TorrentLine</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+  <!-- Loading overlay -->
+  <div id="loading-overlay">
+    <div class="loader-inner">
+      <div class="loader-logo">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="22" stroke="var(--accent)" stroke-width="2" stroke-dasharray="138" stroke-dashoffset="138" class="loader-circle"/>
+          <path d="M24 12v16M24 28l-6-6M24 28l6-6" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 38h20" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="loader-title">TorrentLine</p>
+      <p id="loader-status" class="loader-status">Initializing…</p>
+      <div class="loader-dots"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+  <!-- Header -->
   <header id="app-header">
     <div class="header-inner">
       <div class="logo">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-          <path d="M14 2C7.373 2 2 7.373 2 14s5.373 12 12 12 12-5.373 12-12S20.627 2 14 2z" fill="var(--accent)" opacity="0.15"/>
-          <path d="M14 7v8M14 15l-4-4M14 15l4-4" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M8 21h12" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+          <path d="M13 1v12M13 13l-5-5M13 13l5-5" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4 20h18" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="13" cy="13" r="12" stroke="var(--accent)" stroke-width="1.5" opacity="0.2"/>
         </svg>
         <span class="logo-text">Torrent<span class="logo-accent">Line</span></span>
       </div>
+
+      <nav class="main-tabs" role="tablist">
+        <button class="tab-btn active" data-tab="downloads" role="tab" aria-selected="true">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1v9M7.5 10l-3.5-3.5M7.5 10l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 13h13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          Downloads
+          <span id="dl-count" class="tab-badge hidden">0</span>
+        </button>
+        <button class="tab-btn" data-tab="browse" role="tab" aria-selected="false">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          Browse
+        </button>
+      </nav>
+
       <div id="client-stats" class="client-stats hidden">
-        <span class="stat-item">
-          <span class="stat-arrow down">&#8595;</span>
+        <span class="hstat">
+          <span class="arrow-d">↓</span>
           <span id="global-dl" class="mono">0 B/s</span>
         </span>
-        <span class="stat-sep">·</span>
-        <span class="stat-item">
-          <span class="stat-arrow up">&#8593;</span>
+        <span class="hstat-sep">·</span>
+        <span class="hstat">
+          <span class="arrow-u">↑</span>
           <span id="global-ul" class="mono">0 B/s</span>
         </span>
       </div>
@@ -40,121 +70,155 @@
 
     <div id="compat-warning" class="compat-warning hidden" role="alert"></div>
 
-    <!-- ── ADD TORRENT SECTION ── -->
-    <section id="add-section" aria-label="Add torrent">
-      <div
-        id="drop-zone"
-        role="button"
-        tabindex="0"
-        aria-label="Drop .torrent file here or click to browse"
-      >
-        <div class="drop-icon">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-            <rect x="4" y="4" width="32" height="32" rx="8" stroke="var(--border)" stroke-width="2"/>
-            <path d="M20 12v12M20 24l-5-5M20 24l5-5" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M12 31h16" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
-          </svg>
+    <!-- ═══════════════ DOWNLOADS TAB ═══════════════ -->
+    <div id="tab-downloads" class="tab-pane active">
+
+      <section id="add-section">
+        <div id="drop-zone" role="button" tabindex="0" aria-label="Drop .torrent file or click to browse">
+          <div class="drop-icon">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <rect x="3" y="3" width="30" height="30" rx="8" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="6 3"/>
+              <path d="M18 10v12M18 22l-5-5M18 22l5-5" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M10 29h16" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <p class="drop-label">Drop <code>.torrent</code> here</p>
+          <p class="drop-sub">or <span class="link">browse files</span></p>
+          <input type="file" id="file-input" accept=".torrent" hidden>
         </div>
-        <p class="drop-label">Drop <code>.torrent</code> file here</p>
-        <p class="drop-sub">or <span class="link">browse files</span></p>
-        <input type="file" id="file-input" accept=".torrent" hidden aria-hidden="true">
-      </div>
 
-      <div class="add-divider" aria-hidden="true"><span>or</span></div>
+        <div class="add-divider"><span>or</span></div>
 
-      <div id="magnet-zone">
-        <label for="magnet-input" class="magnet-label">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M8 2v5M8 2C5.239 2 3 4.239 3 7v2a5 5 0 0010 0V7c0-2.761-2.239-5-5-5z" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M5 13l-1.5 1.5M11 13l1.5 1.5" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-          Magnet Link
-        </label>
-        <div class="input-row">
-          <input
-            type="text"
-            id="magnet-input"
-            placeholder="magnet:?xt=urn:btih:…"
-            autocomplete="off"
-            spellcheck="false"
-          >
-          <button id="magnet-btn" type="button" class="btn-primary">Add</button>
+        <div id="magnet-zone">
+          <label for="magnet-input" class="field-label">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v4M7 2C4.791 2 3 3.791 3 6v2a4 4 0 008 0V6c0-2.209-1.791-4-4-4z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4.5 11.5l-1 1M9.5 11.5l1 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            Magnet Link
+          </label>
+          <div class="input-row">
+            <input type="text" id="magnet-input" placeholder="magnet:?xt=urn:btih:…" autocomplete="off" spellcheck="false">
+            <button id="magnet-btn" class="btn-primary" type="button">Add</button>
+          </div>
+          <p id="magnet-error" class="field-error hidden" role="alert"></p>
         </div>
-        <p id="magnet-error" class="field-error hidden" role="alert"></p>
-      </div>
-    </section>
+      </section>
 
-    <!-- ── TORRENT LIST ── -->
-    <section id="torrent-section" aria-label="Active torrents">
-      <div id="empty-state">
-        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <circle cx="32" cy="32" r="28" stroke="var(--border)" stroke-width="2"/>
-          <path d="M32 20v16M32 36l-6-6M32 36l6-6" stroke="var(--border)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M22 46h20" stroke="var(--border)" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <p class="empty-title">No active torrents</p>
-        <p class="empty-sub">Add a .torrent file or magnet link to get started</p>
-      </div>
-      <ul id="torrent-list" role="list"></ul>
-    </section>
+      <section id="torrent-section">
+        <div id="empty-state">
+          <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+            <circle cx="36" cy="36" r="30" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="8 4"/>
+            <path d="M36 22v18M36 40l-7-7M36 40l7-7" stroke="var(--border)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M24 52h24" stroke="var(--border)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <p class="empty-title">No active downloads</p>
+          <p class="empty-sub">Add a .torrent file above, paste a magnet link, or <button class="inline-btn" data-tab="browse">browse torrents</button></p>
+        </div>
+        <ul id="torrent-list" role="list"></ul>
+      </section>
+
+    </div><!-- /tab-downloads -->
+
+    <!-- ═══════════════ BROWSE TAB ═══════════════ -->
+    <div id="tab-browse" class="tab-pane" hidden>
+
+      <section id="browse-hero">
+        <div class="browse-search-wrap">
+          <div class="browse-search-row">
+            <div class="search-input-wrap">
+              <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <input type="text" id="browse-search" placeholder="Search games, software, movies, music…" autocomplete="off" spellcheck="false">
+              <button id="browse-clear" class="search-clear hidden" aria-label="Clear">✕</button>
+            </div>
+            <button id="browse-search-btn" class="btn-primary">Search</button>
+          </div>
+          <div id="browse-cats" class="browse-cats" role="tablist">
+            <button class="cat-btn active" data-cat="0"    data-top100="all"      role="tab">🌐 All</button>
+            <button class="cat-btn"        data-cat="401"  data-top100="games"    role="tab">🎮 Games</button>
+            <button class="cat-btn"        data-cat="300"  data-top100="software" role="tab">💻 Software</button>
+            <button class="cat-btn"        data-cat="201"  data-top100="video"    role="tab">🎬 Movies</button>
+            <button class="cat-btn"        data-cat="205"  data-top100="video"    role="tab">📺 TV</button>
+            <button class="cat-btn"        data-cat="101"  data-top100="audio"    role="tab">🎵 Music</button>
+            <button class="cat-btn"        data-cat="601"  data-top100="other"    role="tab">📚 Books</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="browse-results-section">
+        <div id="browse-status-bar" class="browse-status hidden">
+          <span id="browse-result-count"></span>
+          <span id="browse-query-label"></span>
+        </div>
+
+        <div id="browse-loading" class="browse-loading hidden">
+          <div class="spinner"></div>
+          <span>Searching…</span>
+        </div>
+
+        <div id="browse-empty" class="browse-empty">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none"><circle cx="28" cy="28" r="22" stroke="var(--border)" stroke-width="1.5"/><path d="M43 43l12 12" stroke="var(--border)" stroke-width="2" stroke-linecap="round"/><path d="M20 28h16M28 20v16" stroke="var(--border)" stroke-width="2" stroke-linecap="round"/></svg>
+          <p class="empty-title">Search for anything</p>
+          <p class="empty-sub">Find games, software, movies, and more from public torrent indexes</p>
+        </div>
+
+        <div id="browse-error" class="browse-error hidden">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="21" stroke="var(--danger)" stroke-width="1.5"/><path d="M24 15v12M24 31v3" stroke="var(--danger)" stroke-width="2.5" stroke-linecap="round"/></svg>
+          <p class="empty-title">Search unavailable</p>
+          <p id="browse-error-msg" class="empty-sub">Could not reach the search API. Try again.</p>
+          <button id="browse-retry" class="btn-secondary">Retry</button>
+        </div>
+
+        <ul id="browse-results" class="results-grid" role="list"></ul>
+        <div id="browse-load-more" class="load-more hidden">
+          <button id="load-more-btn" class="btn-secondary">Load more</button>
+        </div>
+      </section>
+
+    </div><!-- /tab-browse -->
 
   </main>
 
   <footer>
     <div class="footer-inner">
-      <span>Powered by <a href="https://webtorrent.io" target="_blank" rel="noopener">WebTorrent</a></span>
-      <span class="footer-note">Downloads happen in-browser · no data is sent to any server</span>
+      <span>Powered by <a href="https://webtorrent.io" target="_blank" rel="noopener">WebTorrent</a> · Search via <a href="https://thepiratebay.org" target="_blank" rel="noopener">The Pirate Bay</a></span>
+      <span class="footer-note">All downloads happen in-browser · no data sent to any server</span>
     </div>
   </footer>
 
-  <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+  <div id="toast-container" aria-live="polite"></div>
 
-  <!-- Templates -->
+  <!-- ── Templates ── -->
   <template id="torrent-card-tpl">
     <li class="torrent-card">
       <div class="card-header">
         <div class="torrent-meta">
-          <span class="torrent-name">Loading metadata…</span>
-          <span class="torrent-size text-muted mono"></span>
+          <span class="torrent-name">Fetching metadata…</span>
+          <span class="torrent-size mono text-muted"></span>
         </div>
         <div class="card-actions">
           <span class="status-badge">connecting</span>
-          <button class="btn-icon btn-remove" title="Remove torrent" aria-label="Remove torrent">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-              <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
+          <button class="btn-icon btn-copy-magnet" title="Copy magnet link" aria-label="Copy magnet">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v4M6.5 1C4.567 1 3 2.567 3 4.5v1a3.5 3.5 0 007 0v-1C10 2.567 8.433 1 6.5 1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M4 10.5l-1 1M9 10.5l1 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+          <button class="btn-icon btn-remove" title="Remove torrent" aria-label="Remove">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           </button>
         </div>
       </div>
 
       <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
         <div class="progress-fill"></div>
-        <span class="progress-pct">0%</span>
+        <span class="progress-pct mono">0%</span>
       </div>
 
       <div class="torrent-stats">
-        <span class="stat-item">
-          <span class="stat-arrow down">&#8595;</span>
-          <span class="dl-speed mono">0 B/s</span>
-        </span>
-        <span class="stat-item">
-          <span class="stat-arrow up">&#8593;</span>
-          <span class="ul-speed mono">0 B/s</span>
-        </span>
-        <span class="stat-item">
-          <span class="peers-icon" aria-label="peers">&#128101;</span>
-          <span class="peers mono">0</span>
-        </span>
-        <span class="stat-item eta-item">
-          <span class="eta-val text-muted">–</span>
-        </span>
+        <span class="tstat"><span class="arrow-d">↓</span> <span class="dl-speed mono">0 B/s</span></span>
+        <span class="tstat"><span class="arrow-u">↑</span> <span class="ul-speed mono">0 B/s</span></span>
+        <span class="tstat peers-stat">👥 <span class="peers mono">0</span></span>
+        <span class="tstat eta-stat"><span class="eta-val text-muted">–</span></span>
+        <span class="tstat dl-total-stat"><span class="dl-total mono text-muted">–</span></span>
       </div>
 
       <details class="file-list-wrap">
-        <summary>
-          Files
-          <span class="file-count badge">0</span>
-        </summary>
+        <summary>Files <span class="file-count badge">0</span></summary>
         <ul class="file-list" role="list"></ul>
       </details>
     </li>
@@ -165,13 +229,46 @@
       <span class="file-icon" aria-hidden="true"></span>
       <span class="file-name"></span>
       <span class="file-size mono text-muted"></span>
-      <button class="btn-download" type="button">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
-          <path d="M6.5 1v8M6.5 9l-3-3M6.5 9l3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M1 11h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        </svg>
-        Download
-      </button>
+      <div class="file-actions">
+        <button class="btn-download" type="button">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v7M6 8l-3-2.5M6 8l3-2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 11h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          Save
+        </button>
+      </div>
+    </li>
+  </template>
+
+  <template id="result-card-tpl">
+    <li class="result-card">
+      <div class="result-thumb">
+        <span class="result-cat-icon"></span>
+      </div>
+      <div class="result-info">
+        <p class="result-name"></p>
+        <div class="result-meta">
+          <span class="result-size mono"></span>
+          <span class="result-age text-muted"></span>
+          <span class="result-cat-label text-muted"></span>
+        </div>
+        <div class="result-seeds">
+          <span class="seed-dot"></span>
+          <span class="result-seeds-num mono"></span>
+          <span class="seed-label">seeds</span>
+          <span class="leech-sep">·</span>
+          <span class="result-leech-num mono text-muted"></span>
+          <span class="leech-label text-muted">leeches</span>
+          <div class="seed-bar-track"><div class="seed-bar-fill"></div></div>
+        </div>
+      </div>
+      <div class="result-actions">
+        <button class="btn-dl-result" type="button">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v9M7 10l-4-4M7 10l4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 13h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Download
+        </button>
+        <button class="btn-copy-result" type="button" title="Copy magnet link">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v4M6.5 1C4.567 1 3 2.567 3 4.5v1a3.5 3.5 0 007 0v-1C10 2.567 8.433 1 6.5 1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M4 10.5l-1 1M9 10.5l1 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
     </li>
   </template>
 
