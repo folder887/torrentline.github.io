@@ -1,3 +1,5 @@
+import WebTorrent from 'https://esm.sh/webtorrent';
+
 (function () {
   'use strict';
 
@@ -57,7 +59,7 @@
   /* ── [4] Browser Support Check ── */
   function checkSupport() {
     const issues = [];
-    if (typeof WebTorrent === 'undefined') issues.push('WebTorrent failed to load (check your connection)');
+    if (!WebTorrent) issues.push('WebTorrent failed to load (check your connection)');
     if (typeof RTCPeerConnection === 'undefined') issues.push('WebRTC is not supported in this browser');
     if (!window.fetch) issues.push('Fetch API not available');
     if (issues.length) {
