@@ -395,10 +395,7 @@
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        // WebTorrent browser build includes Buffer global
-        const buf = typeof Buffer !== 'undefined'
-          ? Buffer.from(e.target.result)
-          : new Uint8Array(e.target.result);
+        const buf = new Uint8Array(e.target.result);
         addTorrent(buf, file.name.replace(/\.torrent$/i, ''));
       } catch (err) {
         showToast('Invalid .torrent file', 'error');
